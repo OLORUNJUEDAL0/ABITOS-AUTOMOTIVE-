@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABITOS-AUTOMOTIVE - Japanese Specialist (Toyota/Lexus e.t.c) Lagos</title>
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<style>
+body{font-family:Arial;max-width:650px;margin:0 auto;padding:20px;background:#fff}
+.header{text-align:center;border-bottom:3px solid #D32F2F;padding-bottom:15px;margin-bottom:20px}
+.header h1{margin:0;letter-spacing:2px}
+.header p{margin:0;color:#D32F2F;font-weight:bold}
+.service{border:1px solid #ddd;padding:14px;margin-bottom:10px;border-radius:10px;cursor:pointer}
+.service.active{border:2px solid #D32F2F;background:#FFF5F5}
+.slot{padding:10px 14px;background:#f0f0f0;border:none;border-radius:8px;cursor:pointer;font-weight:bold;margin:4px}
+.slot.active{background:#D32F2F;color:#fff}
+input{padding:12px;width:100%;margin-bottom:10px;border-radius:8px;border:1px solid #ccc;box-sizing:border-box}
+.payBtn{width:100%;padding:16px;background:#111;color:#fff;font-size:18px;border:none;border-radius:12px;cursor:pointer;font-weight:bold;margin-top:10px}
+</style>
+</head>
+<body>
+
+<div class="header">
+<h1>ABITOS-AUTOMOTIVE</h1>
+<p>LEXUS & TOYOTA VSC/EPS SPECIALIST - LAGOS</p>
+</div>
+
+<h3>1. Choose Service</h3>
+<div id="services"></div>
+
+<h3>2. Date & Time</h3>
+<input type="date" id="date">
+<div id="times" style="display:flex;flex-wrap:wrap;margin-bottom:20px"></div>
+
+<h3>3. Your Details</h3>
+<input id="name" placeholder="OLORUNJUEDALO">
+<input id="phone" placeholder="09133309681">
+<input id="email" placeholder="abitosautomotive@gmail.com">
+
+<button class="payBtn" id="payBtn">PAY & BOOK NOW</button>
+<p style="text-align:center;font-size:13px;color:#888;margin-top:12px">🔒 Secured by Paystack | ABITOS-AUTOMOTIVE</p>
+
+<script>
+const WHATSAPP = "2349133309681"; 
+const SERVICES = [
+  {name:"ABITOS Full Diagnosis Scan",price:10000,desc:"Engine,VSC,EPS,ABS - 30 mins"},
+  {name:"ABITOS VSC/EPS Calibration",price:35000,desc:"Fix C1511,C1512 - 2 hours"},
+  {name:"Engine Fix P0010/P0306",price:25000,desc:"Toyota/Lexus Specialist - 3 hours"},
+  {name:"ABITOS Home Service",price:10000,desc:"Lekki/Ajah/Ikoyi - 1 hour"}
+];
+const SLOTS = ["08:00 AM","09:30 AM","11:00 AM","01:00 PM","02:30 PM","04:00 PM"];
+let selectedService = SERVICES[0];
+let selectedTime = "";
+
+const sDiv = document.getElementById('services');
+SERVICES.forEach((s,i)=>{
+  const d = document.createElement('div');
+  d.className = 'service'+(i==0?' active':'');
+  d.innerHTML = `<div style="display:flex;justify-content:space-between"><strong>${s.name}</strong><strong>₦${s.price.toLocaleString()}</strong></div><small style="color:#666">${s.desc}</small>`;
+  d.onclick = ()=>{
+    document.querySelectorAll('.service').forEach(x=>x.classList.remove('active'));
+    d.classList.add('active');
+    selectedService = s;
+    document.getElementById('payBtn').innerText = `PAY ₦${s.price.toLocaleString()} & LOCK YOUR SLOT`;
+  };
+  sDiv.appendChild(d);
+});
+
+const tDiv = document.getElementById('times');
+SLOTS.forEach(t=>{
+  const b = document.createElement('button');
+  b.className='slot'; b.innerText=t;
+  b.onclick=()=>{
+    document.querySelectorAll('.slot').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active'); selectedTime=t;
+  };
+  tDiv.appendChild(b);
+});
+
+document.getElementById('date').min = new Date().toISOString().split('T')[0];
+document.getElementById('payBtn').innerText = `PAY ₦${selectedService.price.toLocaleString()} & LOCK YOUR SLOT`;
+
+document.getElementById('payBtn').onclick = ()=>{
+  const date = document.getElementById('date').value;
+  const name = document.getElementById('name').value;
+  const phone = document.getElementById('phone').value;
+  const email = document.getElementById('email').value;
+  if(!date||!selectedTime||!name||!phone) return alert('Fill all fields + pick date/time');
+  
+  const handler = PaystackPop.setup({
+    key: 'pk_test_a4ac34acf19a18da4423da0f8a080fec5e5b5b8a
+    email: email || `${phone}@abitos.com`,
+    amount: selectedService.price * 100,
+    currency: 'NGN',
+    ref: `ABITOS_${Date.now()}`,
+    callback: function(res){
+      alert(`Payment Successful! Ref: ${res.reference}\nThanks ${name}, your ${selectedService.name} for ${date} ${selectedTime} don confirm.`);
+      const msg = `Hello ABITOS-AUTOMOTIVE, I just booked ${selectedService.name} for ${date} ${selectedTime}. Name: ${name}. Ref: ${res.reference}. Paid ₦${selectedService.price}`;
+      window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`,'_blank');
+      // save
+      const all = JSON.parse(localStorage.getItem('abitos_bookings')||'[]');
+      all.push({name,phone,service:selectedService.name,date,time:selectedTime,ref:res.reference,amount:selectedService.price});
+      localStorage.setItem('abitos_bookings',JSON.stringify(all));
+    },
+    onClose: ()=>alert('Payment cancelled')
+  });
+  handler.openIframe();
+};
+</script>
+</body>
+</html>
